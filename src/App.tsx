@@ -114,8 +114,12 @@ export default function App() {
           ctx.drawImage(img, 0, 0, w, h);
 
           // Guardar como PNG con alta calidad
-          const logoDataUrl = canvas.toDataURL("image/png", 1.0);
-          update({ logoUrl: logoDataUrl });
+const logoDataUrl = canvas.toDataURL(
+  "image/jpeg",
+  0.6
+);
+
+update({ logoUrl: logoDataUrl });
 
           // Mostrar mensaje de éxito
           console.log("✅ Logo subido correctamente:", w + "x" + h);

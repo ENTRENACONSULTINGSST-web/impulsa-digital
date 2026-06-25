@@ -20,7 +20,11 @@ export function serializeCard(card: CompanyCardData): string {
       ac: card.accentColor,
       bt: card.badgeText,
       se: card.services,
-      lo: card.logoUrl ? (card.logoUrl.length < 50000 ? card.logoUrl : undefined) : undefined,
+      lo:
+  card.logoUrl &&
+  card.logoUrl.length < 3000
+    ? card.logoUrl
+    : undefined,
     };
     return btoa(unescape(encodeURIComponent(JSON.stringify(minCard))));
   } catch (e) {
