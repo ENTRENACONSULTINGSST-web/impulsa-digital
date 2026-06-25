@@ -73,36 +73,64 @@ export default function App() {
   const update = (fields: Partial<CompanyCardData>) =>
     setCardData((prev) => ({ ...prev, ...fields }));
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.type === "text/html" || file.name.endsWith(".html")) {
-      alert("⚠️ Sube una imagen real: PNG, JPG, SVG o WebP.");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result !== "string") return;
-      const img = new Image();
-      img.onload = () => {
-        const maxDim = 120;
-        let w = img.width, h = img.height;
-        if (w > maxDim || h > maxDim) {
-          if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
-          else { w = Math.round((w * maxDim) / h); h = maxDim; }
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, w, h);
-          update({ logoUrl: canvas.toDataURL("image/png") });
-        }
-      };
-      img.src = reader.result;
+const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  
+  // Validar que sea una imagen
+  if (!file.type.startsWith("image/")) {
+    alert("⚠️ Por favor, sube un archivo de imagen válido (PNG, JPG, JPEG, WebP o SVG).");
+    return;
+  }
+  
+  // Validar tamaño (máximo 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert("⚠️ La imagen es demasiado grande. Máximo 5MB.");
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (typeof reader.result !== "string") return;
+    
+    const img = new Image();
+    img.onload = () => {
+      // Aumentar el tamaño máximo a 500px para mejor calidad en exportación
+      const maxDim = 500;
+      let w = img.width, h = img.height;
+      
+      if (w > maxDim || h > maxDim) {
+        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+        else { w = Math.round((w * maxDim) / h); h = maxDim; }
+      }
+      
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        // Mejorar calidad con antialiasing
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, w, h);
+        
+        // Guardar como PNG con alta calidad
+        const logoDataUrl = canvas.toDataURL("image/png", 1.0);
+        update({ logoUrl: logoDataUrl });
+        
+        // Mostrar mensaje de éxito
+        console.log("✅ Logo subido correctamente:", w + "x" + h);
+      }
     };
-    reader.readAsDataURL(file);
+    img.onerror = () => {
+      alert("⚠️ Error al cargar la imagen. Intenta con otro archivo.");
+    };
+    img.src = reader.result;
   };
+  reader.onerror = () => {
+    alert("⚠️ Error al leer el archivo. Intenta nuevamente.");
+  };
+  reader.readAsDataURL(file);
+};
 
   const addService = () => {
     if (serviceInput.trim() && cardData.services.length < 4) {
@@ -229,28 +257,48 @@ export default function App() {
                 </div>
               ))}
 
-              {/* Logo upload */}
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-slate-500">Logotipo (PNG/JPG)</label>
-                <div className="flex gap-2 items-center">
-                  <label className="cursor-pointer flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-950 text-[11px] text-zinc-500 hover:bg-slate-100 transition-colors flex-1">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Elegir Logotipo</span>
-                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                  </label>
-                  {cardData.logoUrl && (
-                    <button
-                      onClick={() => update({ logoUrl: "" })}
-                      className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-500 cursor-pointer"
-                      title="Quitar logotipo"
-                    >
-                      <Trash className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
+{/* Logo upload */}
+<div className="space-y-1">
+  <label className="text-[11px] font-semibold text-slate-500">Logotipo (PNG/JPG)</label>
+  <div className="flex gap-2 items-center">
+    <label className="cursor-pointer flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-950 text-[11px] text-zinc-500 hover:bg-slate-100 transition-colors flex-1">
+      <Upload className="w-3.5 h-3.5" />
+      <span>Elegir Logotipo</span>
+      <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+    </label>
+    {cardData.logoUrl && (
+      <button
+        onClick={() => update({ logoUrl: "" })}
+        className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-500 cursor-pointer"
+        title="Quitar logotipo"
+      >
+        <Trash className="w-4 h-4" />
+      </button>
+    )}
+  </div>
+  
+  {/* Vista previa del logo subido */}
+  {cardData.logoUrl && (
+    <div className="mt-3 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/20">
+      <div className="flex items-center gap-3">
+        <img 
+          src={cardData.logoUrl} 
+          alt="Logo de la empresa" 
+          className="h-16 w-16 object-contain rounded-lg border border-slate-200 dark:border-zinc-700 bg-white p-1"
+        />
+        <div className="flex-1">
+          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4" />
+            ✅ Logo cargado correctamente
+          </p>
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+            El logo aparecerá en tu tarjeta digital y en las imágenes exportadas.
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
 
           {/* 2. Contacto */}
           <section className="bg-white dark:bg-zinc-900 border border-slate-200/50 dark:border-zinc-800/80 rounded-3xl p-5 shadow-sm space-y-4">
