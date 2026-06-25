@@ -442,11 +442,13 @@ export default function OptimizedImageTab({ cardData }: OptimizedImageTabProps) 
     });
   };
 
-  // URL link to point QR code to
-  const generateQRTextContent = async () => {
-    const hash = serializeCard(cardData);
-    return `${window.location.origin}${window.location.pathname}?card=${hash}`;
-  };
+// URL link to point QR code to - FIX: URL fija para WhatsApp
+const generateQRTextContent = async () => {
+  const hash = serializeCard(cardData);
+  // URL fija de GitHub Pages - funciona en WhatsApp móvil
+  const BASE_URL = "https://entrenaconsultingsst-web.github.io/impulsa-digital/";
+  return `${BASE_URL}?card=${hash}`;
+};
 
   // Run draws whenever template, configurations, size or details modify
   useEffect(() => {
