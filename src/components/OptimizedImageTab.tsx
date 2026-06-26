@@ -10,13 +10,14 @@ import {
   Sparkles, RefreshCw, Layers, CheckCircle2 
 } from "lucide-react";
 import { CompanyCardData, THEME_PRESETS } from "../types/index";
+import { serializeCard } from "../utils/index";
 
 interface OptimizedImageTabProps {
   cardData: CompanyCardData;
 }
 
 type SizePreset = {
-  id: "png-qr-card" | "whatsapp-status" | "square-post" | "corporate-banner";
+  id: "whatsapp-status" | "square-post" | "corporate-banner";
   name: string;
   badge: string;
   width: number;
@@ -26,15 +27,6 @@ type SizePreset = {
 };
 
 const SIZE_PRESETS: SizePreset[] = [
-  {
-    id: "png-qr-card",
-    name: "Tarjeta PNG + QR para WhatsApp",
-    badge: "★ RECOMENDADO",
-    width: 1200,
-    height: 630,
-    desc: "Tarjeta corporativa horizontal con QR grande integrado. Diseñada para enviarse directamente por WhatsApp como imagen adjunta.",
-    aspectClass: "aspect-[1200/630] w-72",
-  },
   {
     id: "whatsapp-status",
     name: "Estado de WhatsApp / IG Story",
@@ -65,7 +57,7 @@ const SIZE_PRESETS: SizePreset[] = [
 ];
 
 export default function OptimizedImageTab({ cardData }: OptimizedImageTabProps) {
-  const [selectedSize, setSelectedSize] = useState<"png-qr-card" | "whatsapp-status" | "square-post" | "corporate-banner">("png-qr-card");
+  const [selectedSize, setSelectedSize] = useState<"whatsapp-status" | "square-post" | "corporate-banner">("whatsapp-status");
   const [exporting, setExporting] = useState(false);
   const [downloadReady, setDownloadReady] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -193,7 +185,7 @@ export default function OptimizedImageTab({ cardData }: OptimizedImageTabProps) 
 
       ctx.font = `bold ${Math.round(width * 0.032)}px sans-serif`;
       ctx.fillStyle = primaryTextColor;
-      ctx.fillText("ESCANEAR • CONTACTAR POR WHATSAPP", width / 2, qrY + qrSize + 60);
+      ctx.fillText("ESCANEAR PARA CONTACTO", width / 2, qrY + qrSize + 60);
 
       // 6. Contact quick info details at the bottom
       ctx.font = `500 ${Math.round(width * 0.032)}px sans-serif`;
@@ -210,76 +202,6 @@ export default function OptimizedImageTab({ cardData }: OptimizedImageTabProps) 
       if (cardData.website) {
         ctx.fillText(`🌐 Web: ${cardData.website}`, width / 2, bottomY);
       }
-
-    } else if (selectedSize === "png-qr-card") {
-      // PNG + QR Card — tarjeta horizontal 1200x630 para WhatsApp
-      // Franja de acento superior
-      ctx.fillStyle = accentColor;
-      ctx.fillRect(0, 0, width, isHighRes ? 12 : 5);
-
-      // Logo centrado a la izquierda
-      const logoSize = Math.round(height * 0.22);
-      const logoCX = width * 0.10;
-      const logoCY = height * 0.22;
-      await drawBrandLogo(ctx, logoCX, logoCY, logoSize, accentColor, isDark, isHighRes);
-
-      // Nombre empresa
-      ctx.font = `bold ${Math.round(height * 0.12)}px sans-serif`;
-      ctx.fillStyle = primaryTextColor;
-      ctx.textAlign = "left";
-      ctx.fillText(cardData.businessName || "Empresa", width * 0.06, height * 0.42);
-
-      // Representante + cargo
-      if (cardData.representativeName) {
-        ctx.font = `600 ${Math.round(height * 0.075)}px sans-serif`;
-        ctx.fillStyle = primaryTextColor;
-        ctx.fillText(cardData.representativeName, width * 0.06, height * 0.54);
-      }
-      if (cardData.role) {
-        ctx.font = `500 ${Math.round(height * 0.055)}px monospace`;
-        ctx.fillStyle = accentColor;
-        ctx.fillText(cardData.role.toUpperCase(), width * 0.06, height * 0.63);
-      }
-
-      // Datos de contacto debajo
-      ctx.font = `${Math.round(height * 0.052)}px sans-serif`;
-      ctx.fillStyle = secondaryTextColor;
-      let cy2 = height * 0.75;
-      if (cardData.phone) { ctx.fillText(`📞  ${cardData.phone}`, width * 0.06, cy2); cy2 += height * 0.1; }
-      if (cardData.email) { ctx.fillText(`✉️  ${cardData.email}`, width * 0.06, cy2); cy2 += height * 0.1; }
-      if (cardData.website) { ctx.fillText(`🌐  ${cardData.website}`, width * 0.06, cy2); }
-
-      // Divisor vertical
-      ctx.strokeStyle = hexToRGBA(accentColor, 0.25);
-      ctx.lineWidth = isHighRes ? 3 : 1.5;
-      ctx.beginPath();
-      ctx.moveTo(width * 0.58, height * 0.08);
-      ctx.lineTo(width * 0.58, height * 0.92);
-      ctx.stroke();
-
-      // QR grande a la derecha
-      const qrSize2 = Math.round(height * 0.72);
-      const qrX2 = width * 0.62;
-      const qrY2 = (height - qrSize2) / 2;
-
-      ctx.fillStyle = isDark ? "#1e293b" : "#ffffff";
-      ctx.shadowColor = "rgba(0,0,0,0.18)";
-      ctx.shadowBlur = isHighRes ? 30 : 14;
-      roundRect(ctx, qrX2 - 16, qrY2 - 16, qrSize2 + 32, qrSize2 + 32, 24, true, false);
-      ctx.shadowBlur = 0;
-
-      const qrUrl2 = await generateQRTextContent();
-      const qrImg2 = await loadQRImage(qrUrl2, accentColor, isDark ? "#1e293b" : "#ffffff");
-      if (qrImg2) ctx.drawImage(qrImg2, qrX2, qrY2, qrSize2, qrSize2);
-
-      ctx.font = `bold ${Math.round(height * 0.055)}px sans-serif`;
-      ctx.fillStyle = primaryTextColor;
-      ctx.textAlign = "center";
-      ctx.fillText("ESCANEAR → CONTACTAR", qrX2 + qrSize2 / 2, qrY2 + qrSize2 + 50);
-
-      // Franja de acento inferior
-      ctx.fillStyle = accentColor;
-      ctx.fillRect(0, height - (isHighRes ? 12 : 5), width, isHighRes ? 12 : 5);
 
     } else if (selectedSize === "square-post") {
       // 1:1 Square layout
@@ -351,7 +273,7 @@ export default function OptimizedImageTab({ cardData }: OptimizedImageTabProps) 
       ctx.font = `bold ${Math.round(width * 0.022)}px sans-serif`;
       ctx.fillStyle = primaryTextColor;
       ctx.textAlign = "center";
-      ctx.fillText("ESCANEAR • VER PORTAFOLIO", qrX + (qrSize / 2), qrY + qrSize + 45);
+      ctx.fillText("ESCANEAR CONTACTO VIRTUAL", qrX + (qrSize / 2), qrY + qrSize + 45);
 
       // Main contacts footer line
       ctx.font = `500 ${Math.round(width * 0.024)}px sans-serif`;
@@ -424,7 +346,7 @@ export default function OptimizedImageTab({ cardData }: OptimizedImageTabProps) 
       ctx.font = `bold ${Math.round(width * 0.02)}px sans-serif`;
       ctx.fillStyle = primaryTextColor;
       ctx.textAlign = "center";
-      ctx.fillText("ESCANEAR • PORTAFOLIO ENTRENA", qrX + (qrSize / 2), qrY + qrSize + 40);
+      ctx.fillText("ESCANEAR TARJETA DIGITAL", qrX + (qrSize / 2), qrY + qrSize + 40);
     }
   };
 
@@ -520,12 +442,13 @@ export default function OptimizedImageTab({ cardData }: OptimizedImageTabProps) 
     });
   };
 
-  // QR apunta al sitio WIX de la empresa (URL fija, corta, siempre funciona)
-  const generateQRTextContent = async () => {
-    return cardData.website
-      ? cardData.website.startsWith("http") ? cardData.website : `https://${cardData.website}`
-      : "https://entrenaconsulting.wixsite.com/entrenaconsultingsst";
-  };
+// URL link to point QR code to - FIX: URL fija para WhatsApp
+const generateQRTextContent = async () => {
+  const hash = serializeCard(cardData);
+  // URL fija de GitHub Pages - funciona en WhatsApp móvil
+  const BASE_URL = "https://entrenaconsultingsst-web.github.io/impulsa-digital/";
+  return `${BASE_URL}?card=${hash}`;
+};
 
   // Run draws whenever template, configurations, size or details modify
   useEffect(() => {
