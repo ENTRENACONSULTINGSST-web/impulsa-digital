@@ -4,18 +4,17 @@
  * GitHub: https://github.com/TU_USUARIO/impulsa-digital
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
-  Sliders, QrCode, Image, Share2,
-  CheckCircle2, Upload, Globe,
-  Trash, Plus, Mail, Phone, MapPin,
-  Linkedin, Facebook, Instagram, ArrowLeft, ExternalLink, Crown,
+  Sliders, QrCode, Image, Upload, Globe,
+  Trash, Plus,
+  Linkedin, Facebook, Instagram, Crown, Download,
 } from "lucide-react";
 import { CompanyCardData, THEME_PRESETS } from "./types/index";
 import InteractiveCard from "./components/InteractiveCard";
 import QRCodeTab from "./components/QRCodeTab";
 import OptimizedImageTab from "./components/OptimizedImageTab";
-import { serializeCard, deserializeCard } from "./utils/index";
+
 
 const DEFAULT_CARD: CompanyCardData = {
   businessName: "Entrena Consulting SAS",
@@ -52,23 +51,8 @@ function Smartphone({ className }: { className?: string }) {
 
 export default function App() {
   const [cardData, setCardData] = useState<CompanyCardData>(DEFAULT_CARD);
-  const [activeTab, setActiveTab] = useState<"interactive-card" | "qr-code" | "image-optimize">("interactive-card");
-  const [isSharedMode, setIsSharedMode] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [activeTab, setActiveTab] = useState<"interactive-card" | "qr-code" | "image-optimize">("image-optimize");
   const [serviceInput, setServiceInput] = useState("");
-
-  // Detectar enlace compartido en URL (?card=...)
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const cardParam = params.get("card");
-    if (cardParam) {
-      const decoded = deserializeCard(cardParam);
-      if (decoded) {
-        setCardData(decoded);
-        setIsSharedMode(true);
-      }
-    }
-  }, []);
 
   const update = (fields: Partial<CompanyCardData>) =>
     setCardData((prev) => ({ ...prev, ...fields }));
@@ -114,48 +98,6 @@ export default function App() {
   const removeService = (i: number) =>
     update({ services: cardData.services.filter((_, idx) => idx !== i) });
 
-  const handleCopyShareLink = () => {
-    const hash = serializeCard(cardData);
-    const url = `${window.location.origin}${window.location.pathname}?card=${hash}`;
-    navigator.clipboard.writeText(url);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
-
-  // ── VISTA COMPARTIDA (micrositio móvil) ──────────────────────────────────
-  if (isSharedMode) {
-    const theme = THEME_PRESETS.find((t) => t.id === cardData.theme) || THEME_PRESETS[0];
-    return (
-      <div className={`min-h-screen py-10 px-4 flex flex-col items-center justify-center ${theme.bgClass} transition-colors duration-500`}>
-        <div
-          className="absolute top-[10%] left-[10%] w-72 h-72 rounded-full filter blur-[120px] opacity-20 pointer-events-none"
-          style={{ backgroundColor: cardData.accentColor }}
-        />
-        <div className="w-full max-w-sm relative z-10 space-y-6">
-          <div className="text-center mb-2">
-            <h1 className="text-sm font-semibold tracking-widest text-zinc-500 uppercase flex items-center justify-center gap-1.5">
-              <Crown className="w-4 h-4 text-amber-500" />
-              Tarjeta Comercial Interactiva
-            </h1>
-          </div>
-          <InteractiveCard data={cardData} />
-          <div className="text-center pt-2">
-            <button
-              onClick={() => {
-                window.history.pushState({}, document.title, window.location.pathname);
-                setIsSharedMode(false);
-              }}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 font-bold text-xs text-white cursor-pointer transition-all"
-            >
-              <ArrowLeft className="w-4 h-4 text-rose-500" />
-              Diseñar mi propia Tarjeta Digital
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // ── VISTA EDITOR ─────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#fafafa] dark:bg-zinc-950 text-slate-800 dark:text-zinc-100 font-sans">
@@ -173,28 +115,14 @@ export default function App() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleCopyShareLink}
-            className="px-3 py-2 rounded-xl border border-rose-500 bg-rose-500/5 hover:bg-rose-500/10 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center gap-1.5 cursor-pointer transition-all"
-          >
-            {copiedLink ? (
-              <><CheckCircle2 className="w-4 h-4 text-emerald-500" /><span>¡Copiado!</span></>
-            ) : (
-              <><Share2 className="w-4 h-4" /><span className="hidden sm:inline">Compartir por WhatsApp</span><span className="sm:hidden">Compartir</span></>
-            )}
-          </button>
-          <button
-            onClick={() => {
-              const hash = serializeCard(cardData);
-              window.open(`${window.location.origin}${window.location.pathname}?card=${hash}`, "_blank");
-            }}
-            className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 text-zinc-500 cursor-pointer transition-all"
-            title="Ver como visitante"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </button>
-        </div>
+        <button
+          onClick={() => setActiveTab("image-optimize")}
+          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 cursor-pointer transition-all shadow-md"
+        >
+          <Download className="w-4 h-4" />
+          <span className="hidden sm:inline">Exportar PNG para WhatsApp</span>
+          <span className="sm:hidden">Exportar PNG</span>
+        </button>
       </header>
 
       {/* DASHBOARD */}
