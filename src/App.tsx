@@ -69,7 +69,7 @@ export default function App() {
       if (typeof reader.result !== "string") return;
       const img = new Image();
       img.onload = () => {
-        const maxDim = 120;
+        const maxDim = 600;
         let w = img.width, h = img.height;
         if (w > maxDim || h > maxDim) {
           if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
