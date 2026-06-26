@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from "react";
-import QRCode from "qrcode";
 import { 
   Download, QrCode, Link, MessageSquare, UserPlus, 
   Globe, Sparkles, RefreshCw, CheckCircle2 
@@ -64,16 +63,29 @@ export default function QRCodeTab({ cardData }: QRCodeTabProps) {
     setLoading(true);
     const textToEncode = getQRContent();
     try {
-      const url = await QRCode.toDataURL(textToEncode, {
-        width: 380,
-        margin: qrMargin,
-        color: {
-          dark: qrColorDark,
-          light: qrColorLight,
-        },
-        errorCorrectionLevel: 'H' // High reliability
-      });
-      setQrImage(url);
+      // @ts-ignore
+      const qr = window.qrcode(0, "H");
+      qr.addData(textToEncode);
+      qr.make();
+      const size = 380;
+      const cells = qr.getModuleCount();
+      const cellSize = Math.floor(size / cells);
+      const canvas = document.createElement("canvas");
+      const padding = qrMargin * cellSize;
+      canvas.width = size + padding * 2;
+      canvas.height = size + padding * 2;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = qrColorLight;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = qrColorDark;
+      for (let row = 0; row < cells; row++) {
+        for (let col = 0; col < cells; col++) {
+          if (qr.isDark(row, col)) {
+            ctx.fillRect(col * cellSize + padding, row * cellSize + padding, cellSize, cellSize);
+          }
+        }
+      }
+      setQrImage(canvas.toDataURL("image/png"));
     } catch (err) {
       console.error("Error generating QR code:", err);
     } finally {
