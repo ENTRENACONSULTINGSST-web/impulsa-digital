@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useRef, useEffect } from "react";
+import QRCode from "qrcode";
 import { 
   Download, Image, Smartphone, Monitor, Grid, 
   Sparkles, RefreshCw, Layers, CheckCircle2 
@@ -496,35 +497,20 @@ export default function OptimizedImageTab({ cardData }: OptimizedImageTabProps) 
     ctx.restore();
   };
 
-  // Generate QR as HTMLImageElement using qrcode-generator (pure browser)
+  // Generate QR using qrcode npm (browser build via Vite)
   const loadQRImage = (text: string, fgColor: string, bgColor: string): Promise<HTMLImageElement | null> => {
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       try {
-        // @ts-ignore
-        const qr = window.qrcode(0, "H");
-        qr.addData(text);
-        qr.make();
-        const size = 320;
-        const cells = qr.getModuleCount();
-        const cellSize = Math.floor(size / cells);
-        const canvas = document.createElement("canvas");
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext("2d")!;
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, size, size);
-        ctx.fillStyle = fgColor;
-        for (let row = 0; row < cells; row++) {
-          for (let col = 0; col < cells; col++) {
-            if (qr.isDark(row, col)) {
-              ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
-            }
-          }
-        }
+        const dataUrl = await QRCode.toDataURL(text, {
+          width: 400,
+          margin: 1,
+          color: { dark: fgColor, light: bgColor },
+          errorCorrectionLevel: "H",
+        });
         const img = new Image();
         img.onload = () => resolve(img);
         img.onerror = () => resolve(null);
-        img.src = canvas.toDataURL("image/png");
+        img.src = dataUrl;
       } catch (e) {
         resolve(null);
       }
